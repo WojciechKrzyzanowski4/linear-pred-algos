@@ -1,11 +1,8 @@
 import pandas as pd
-import numpy as np
-import datetime as datetime
 from dateutil import parser
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
 from keras.api.models import Sequential
 from keras.api.layers import Dense, Dropout
 
@@ -20,12 +17,9 @@ df = pd.DataFrame(data)
 
 df['date_num'] = (df['date'] - df['date'].min()).dt.days
 
-df['var1_lag1'] = df['var1'].shift(1)
-df['var2_lag1'] = df['var2'].shift(1)
-
 df.dropna(inplace=True)
 
-X = df[['var1', 'var2', 'date_num', 'var1_lag1', 'var2_lag1']]
+X = df[['var1', 'var2', 'date_num']]
 y = df['result']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -35,10 +29,10 @@ X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
 model = Sequential([
-    Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
-    Dropout(0.1),  # Dropout layer to prevent overfitting
-    Dense(64, activation='relu'),
-    Dropout(0.1),
+    Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
+    Dropout(0.4),  # Dropout layer to prevent overfitting
+    Dense(128, activation='relu'),
+    Dropout(0.4),
     Dense(32, activation='relu'),
     Dense(1)
 ])
@@ -62,25 +56,15 @@ def predict_result(var1, var2, date_str, df, model):
         return None
 
     date_num = (date - df['date'].min()).days
-    prev_date = date - pd.Timedelta(days=1)
 
-    # Sprawdzenie, czy poprzednia data istnieje w DataFrame
-    if not df[df['date'] == prev_date].empty:
-        var1_lag1 = df[df['date'] == prev_date]['var1'].values[0]
-        var2_lag1 = df[df['date'] == prev_date]['var2'].values[0]
+    # Przygotowanie cech w formie DataFrame z odpowiednimi nazwami kolumn
+    features = pd.DataFrame({
+        'var1': [var1],
+        'var2': [var2],
+        'date_num': [date_num]
+    })
+    features = scaler.transform(features)
+    return model.predict(features)[0][0]
 
-        # Przygotowanie cech w formie DataFrame z odpowiednimi nazwami kolumn
-        features = pd.DataFrame({
-            'var1': [var1],
-            'var2': [var2],
-            'date_num': [date_num],
-            'var1_lag1': [var1_lag1],
-            'var2_lag1': [var2_lag1]
-        })
 
-        return model.predict(features)[0]
-    else:
-        print("Opóźnione wartości dla podanej daty nie są dostępne.")
-        return None
-
-print(predict_result(50, 100, '25.01.1900', df, model))
+print(predict_result(50, 100, '27.02.1900', df, model))
