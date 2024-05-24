@@ -15,43 +15,28 @@ data = {
     'date': pd.date_range(start='01.01.1900', periods=49, freq='D')
 }
 
-# creating the dataframe
 
 df = pd.DataFrame(data)
 
-# we will convert the dates in to their offset from the
-
-
 df['date_num'] = (df['date'] - df['date'].min()).dt.days
 
-# we need the lagging variables to implement "SZEREG CZASOWY"
 
 df['var1_lag1'] = df['var1'].shift(1)
 df['var2_lag1'] = df['var2'].shift(1)
 
-# make sure to remove the nan
 
 df.dropna(inplace=True)
 
-# we prepare the input and output
 
 X = df[['var1', 'var2', 'date_num', 'var1_lag1', 'var2_lag1']]
 y = df['result']
 
-# Classic 80 20 split to train the model
-
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Let's train our model
 
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# predict the results
-
 y_pred = model.predict(X_test)
-
-# Let's check how accurate we were
 
 mse = mean_squared_error(y_test, y_pred)
 print(f'Mean Squared Error: {mse}')
@@ -81,8 +66,6 @@ def predict_result(var1, var2, date_str, df, model):
         print("Opóźnione wartości dla podanej daty nie są dostępne.")
         return None
 
-
-# lets hope and we see 150
 
 print(predict_result(50, 100, '25.01.1900', df, model))
 
